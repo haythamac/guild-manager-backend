@@ -45,16 +45,30 @@ class PlayerController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Player $player)
     {
-        //
+        $request->validate([
+            'ign' => 'sometimes|max:255',
+            'level' => 'integer',
+            'class' => 'string|max:255',
+            'power' => 'integer',
+            'guild' => 'string|max:255',
+            'status' => 'string|max:50',
+            'power_screenshot' => 'nullable|image|max:2048',
+        ]);
+
+        $playerData = $request->only(['ign', 'level', 'class', 'power', 'guild', 'status']);
+
+        $player->update($playerData);
+        return $player;
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Player $player)
     {
-        //
+        $player->delete();
+        return response()->noContent();
     }
 }
