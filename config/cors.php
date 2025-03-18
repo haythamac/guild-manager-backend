@@ -6,7 +6,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['https://nc-frontend-haythamac-haythamacs-projects.vercel.app'],
+    'allowed_origins' => ['https://nc-frontend-haythamac-haythamacs-projects.vercel.app', 'https://nc-frontend-ruby.vercel.app/'],
 
     'allowed_origins_patterns' => [],
 
