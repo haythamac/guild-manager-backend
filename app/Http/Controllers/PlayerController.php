@@ -26,12 +26,22 @@ class PlayerController extends Controller
             'class' => 'nullable|string|max:50',
             'power_screenshot' => 'nullable|image|max:2048',
             'power' => 'nullable|integer',
-        ]); 
+            'discord' => 'nullable|string|max:255',
+        ]);
 
-        $playerData = $request->only(['ign', 'level', 'class', 'power']);
+        // Check if the IGN already exists
+        $existingPlayer = Player::where('ign', $request->ign)->first();
+        if ($existingPlayer) {
+            return response()->json(['error' => 'IGN already exists.'], 400);
+        }
+
+        $accessCode = Player::generateMemberAccessCode();
+
+        $playerData = $request->only(['ign', 'level', 'class', 'power', 'discord']);
+        $playerData['member_access_code'] = $accessCode;
 
         $player = Player::create($playerData);
-        return $player;
+        return response()->json($player, 201);
     }
 
     /**
@@ -47,7 +57,8 @@ class PlayerController extends Controller
      */
     public function update(Request $request, Player $player)
     {
-        $request->validate([
+        $validated = $request->validate([
+            'access_code' => 'required|string',
             'ign' => 'sometimes|max:255',
             'level' => 'integer',
             'class' => 'string|max:255',
@@ -55,9 +66,17 @@ class PlayerController extends Controller
             'guild' => 'string|max:255',
             'status' => 'string|max:50',
             'power_screenshot' => 'nullable|image|max:2048',
+            'discord' => 'string|max:255',
         ]);
 
-        $playerData = $request->only(['ign', 'level', 'class', 'power', 'guild', 'status']);
+        $playerData = $request->only(['ign', 'level', 'class', 'power', 'guild', 'status', 'discord']);
+
+        // Verify access code again for security
+        if ($player->member_access_code !== $validated['access_code']) {
+            return redirect()->back()
+                ->withErrors(['access_code' => 'Invalid access code.'])
+                ->withInput();
+        }
 
         $player->update($playerData);
         return $player;
@@ -70,5 +89,29 @@ class PlayerController extends Controller
     {
         $player->delete();
         return response()->noContent();
+    }
+
+    /**
+     * Verify access code and show edit form
+     */
+    public function verifyAndEdit(Request $request)
+    {
+        $validated = $request->validate([
+            'ign' => 'required|string|exists:players,ign',
+            'access_code' => 'required|string',
+        ]);
+
+        // Find the player by IGN
+        $player = Player::where('ign', $validated['ign'])->first();
+
+        // Verify the access code
+        if (!$player || $player->member_access_code !== $validated['access_code']) {
+            return redirect()->back()
+                ->withErrors(['access_code' => 'Invalid access code for this IGN.'])
+                ->withInput();
+        }
+
+        // Show the edit form with the player data
+        return view('players.edit', ['player' => $player]);
     }
 }
