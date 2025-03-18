@@ -9,6 +9,14 @@ Route::get('/hello', function() {
     return response()->json(['message' => 'Hello World!']);
 });
 
+Route::options('/cors-test', function () {
+    return response()->json(['message' => 'CORS test successful']);
+});
+
+Route::get('/cors-test', function () {
+    return response()->json(['message' => 'CORS test successful']);
+});
+
 Route::post('login', [SessionController::class, 'login']); 
 Route::apiResource('players', PlayerController::class);
 Route::get('/user', function (Request $request) {
