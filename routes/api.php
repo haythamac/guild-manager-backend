@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\GuildController;
 use App\Http\Controllers\PlayerController;
 use App\Http\Controllers\SessionController;
 use Illuminate\Http\Request;
@@ -18,5 +19,11 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::apiResource('players', PlayerController::class);
 Route::post('verifyPlayer', [PlayerController::class, 'verifyPlayer']);
 Route::put('playerUpdate/{player:ign}', [PlayerController::class, 'playerUpdate']);
+
+
+
+Route::apiResource('guilds', GuildController::class);
+Route::get('guilds/{guildName}/distinctClassPerGuild', [PlayerController::class, 'distinctClassPerGuild']);
+
 
 

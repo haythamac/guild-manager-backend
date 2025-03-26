@@ -4,15 +4,39 @@ namespace App\Http\Controllers;
 
 use App\Models\Player;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PlayerController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of the resource
      */
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(Player::all());
+        $query = Player::query();
+
+        // Guild filter (dropdown)
+        if ($request->has('guild')) {
+            $query->where('guild', $request->guild);
+        }
+
+        // IGN search (search box)
+        if ($request->has('search')) {
+            $query->where('ign', 'like', '%' . $request->search . '%');
+        }
+
+        // Class filter (buttons)
+        if ($request->has('class')) {
+            $query->where('class', $request->class);
+        }
+
+        // Apply sorting (from column headers)
+        $sortable = ['status', 'level', 'growth_rate'];
+        $sortBy = in_array($request->sort_by, $sortable) ? $request->sort_by : 'id';
+        $sortOrder = in_array($request->sort_order, ['asc', 'desc']) ? $request->sort_order : 'asc';
+        $query->orderBy($sortBy, $sortOrder);
+
+        return $query->paginate(10);
     }
 
     /**
@@ -147,5 +171,27 @@ class PlayerController extends Controller
 
         $player->update($playerData);
         return response()->json($player);
+    }
+
+    /**
+     * Get distinct class counts for a specific guild.
+     */
+    public function distinctClassPerGuild($guildName)
+    {
+        // Fetch the guild ID based on the guild's name
+        $guild = DB::table('guilds')->where('name', $guildName)->first();
+
+        if (!$guild) {
+            return response()->json(['error' => 'Guild not found.'], 404);
+        }
+
+        // Use the guild ID to fetch class counts
+        $classCounts = DB::table('players')
+            ->select('class', DB::raw('COUNT(*) as total_count'))
+            ->where('guild', $guild->name)
+            ->groupBy('class')
+            ->get();
+
+        return response()->json($classCounts);
     }
 }
